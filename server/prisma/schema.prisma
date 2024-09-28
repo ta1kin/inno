@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  phone    String @unique
+  name     String
+  password String
+  role     Role   @default(Guest)
+}
+
+model Post {
+  id        Int     @id @default(autoincrement())
+  title     String
+  filename  String
+  hash      String
+  delivered Boolean @default(false)
+}
+
+enum Role {
+  Admin
+  Guest
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tasks       Task[]
+
+  @@map("projects")
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  status      String
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  project     Project   @relation(fields: [projectId], references: [id])
+  projectId   Int
+  roadmap     Roadmap?  @relation(fields: [roadmapId], references: [id]) // 
+  roadmapId   Int?
+
+  @@map("tasks")
+}
+
+model Roadmap {
+  id        Int      @id @default(autoincrement())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  tasks     Task[]
+
+  @@map("roadmaps")
+}
