@@ -1,0 +1,74 @@
+services:
+  server:
+    build:
+      context: ./server
+    ports:
+      - 3000:3000
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    volumes:
+      - files:/app/files
+      - stamped_files:/app/stamped_files
+  db:
+    image: postgres
+    restart: always
+    volumes:
+      - ./db_data:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "${DB_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  nginx:
+    container_name: proxy_nginx
+    depends_on:
+      - server
+      - db
+    image: nginx:latest
+    ports:
+      - '80:80'
+    env_file:
+      - .env
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+    restart: always
+  # stamp:
+  #   build: 
+  #     context: ./sign_service
+  #   volumes:
+  #     - files:/service/dist
+  #     - stamped_files:/service/edited
+  #   ports:
+  #     - '50051:50051'
+  #   command: python3 /service/main.py
+  # client:  
+  #   build:
+  #     context: ./client
+  #   ports:
+  #     - 3000:3000
+  #   depends_on:
+  #     - db
+  #     - server  
+  #   env_file:
+  #     - .env
+  pgadmin:
+    container_name: pgadmin
+    depends_on:
+      - db
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@mail.ru
+      PGADMIN_DEFAULT_PASSWORD: aaa000
+    expose:
+      - '80'
+    restart: always  
+volumes:
+  files:
+  stamped_files:
